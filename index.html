@@ -1,0 +1,91 @@
+<<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Games Box | ミニゲーム集</title>
+    <style>
+        :root { --bg: #020617; --card-bg: #1e293b; --accent: #38bdf8; --text: #f8fafc; --gold: #fbbf24; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        header { padding: 40px 20px 20px 20px; text-align: center; background: linear-gradient(to bottom, #0f172a, var(--bg)); }
+        h1 { font-size: 32px; color: var(--gold); margin: 0; letter-spacing: 2px; }
+        .subtitle { font-size: 14px; color: var(--accent); font-weight: bold; margin-top: 5px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .desc-container { position: relative; padding: 20px; background: var(--card-bg); border-radius: 16px; border: 1px solid #334155; margin-bottom: 30px; text-align: center; }
+        .ai-badge { position: absolute; top: -10px; right: 20px; background: #334155; color: #94a3b8; font-size: 10px; padding: 2px 10px; border-radius: 10px; border: 1px solid #475569; }
+        .site-desc { font-size: 14px; color: #94a3b8; }
+        .game-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 600px) { .game-grid { grid-template-columns: 1fr 1fr; } }
+        .game-card { background: var(--card-bg); border-radius: 20px; border: 1px solid #334155; overflow: hidden; text-decoration: none; color: inherit; transition: all 0.3s ease; display: flex; flex-direction: column; }
+        .game-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .game-info { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .game-title { font-size: 20px; font-weight: bold; color: var(--gold); margin-bottom: 10px; }
+        .game-text { font-size: 13px; color: #94a3b8; flex-grow: 1; margin-bottom: 20px; }
+        .play-btn { background: var(--accent); color: #020617; padding: 10px; border-radius: 12px; font-weight: bold; text-align: center; font-size: 14px; }
+        footer { text-align: center; padding: 40px 20px; border-top: 1px solid #1e293b; margin-top: 40px; }
+        .footer-links { margin-bottom: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 20px; }
+        .footer-links a { color: #64748b; text-decoration: none; font-size: 13px; }
+        .footer-links a:hover { color: var(--accent); }
+        .copyright { color: #475569; font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>MY GAMES BOX</h1>
+    <div class="subtitle">FREE WEB MINI GAMES</div>
+</header>
+
+<div class="container">
+    <div class="desc-container">
+        <div class="ai-badge">開発にはAIを使用しています</div>
+        <div class="site-desc">
+            暇つぶしに最適な、ブラウザで遊べる無料ミニゲーム集です。<br>
+            インストール不要で、PC・スマートフォンの両方に対応しています。
+        </div>
+    </div>
+
+    <div class="game-grid">
+        <a href="pittarisutoppu.html" class="game-card">
+            <div class="game-info">
+                <div class="game-title">📏 ぴったりストップ</div>
+                <div class="game-text">指定された距離でピタッと止める、感覚と反射神経のゲーム。ピッタリ賞を狙おう！</div>
+                <div class="play-btn">PLAY NOW</div>
+            </div>
+        </a>
+
+        <a href="reverse-grid.html" class="game-card">
+            <div class="game-info">
+                <div class="game-title">🟦 リバース・グリッド</div>
+                <div class="game-text">タップで周囲が反転。すべてのパネルを黄色に変える、思考型パズルゲーム。</div>
+                <div class="play-btn">PLAY NOW</div>
+            </div>
+        </a>
+
+        <a href="number-tap.html" class="game-card">
+            <div class="game-info">
+                <div class="game-title">🔢 ナンバー・タップ</div>
+                <div class="game-text">1から順に数字を素早くタップ！あなたの周辺視野と集中力が試されるスピード勝負。</div>
+                <div class="play-btn">PLAY NOW</div>
+            </div>
+        </a>
+        <div class="game-card" style="opacity: 0.5; border-style: dashed; cursor: default;">
+            <div class="game-info">
+                <div class="game-title" style="color: #64748b;">⏳ Coming Soon...</div>
+                <div class="game-text">新しいミニゲームを現在開発中です。アップデートをお楽しみに！</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="about.html">このサイトについて</a>
+        <a href="privacy-policy.html">プライバシーポリシー</a>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdp9HDAJW6ENL1XALiHy6ibSd8wX3aS30n3GqTd0Txxit9cEw/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">お問い合わせ</a>
+    </div>
+    <div class="copyright">&copy; 2026 My Games Box</div>
+</footer>
+
+</body>
+</html>

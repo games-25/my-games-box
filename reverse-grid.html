@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>リバース・グリッド - Time Attack</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #020617; color: white; text-align: center; margin: 0; height: 100vh; overflow: hidden; touch-action: none; user-select: none; display: flex; flex-direction: column; }
+        
+        @media (min-width: 768px) {
+            .container { height: 100%; justify-content: center; }
+        }
+        @media (max-width: 767px) {
+            .container { margin: 0; justify-content: center; }
+        }
+
+        .container { flex-grow: 1; display: flex; flex-direction: column; padding: 10px; align-items: center; justify-content: center; position: relative; }
+        #game-menu { display: flex; flex-direction: column; gap: 15px; width: 95%; max-width: 450px; }
+        .menu-title { font-size: 26px; color: #fbbf24; font-weight: bold; }
+        .size-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .size-card { background: #1e293b; border: 2px solid #334155; border-radius: 15px; padding: 20px; cursor: pointer; transition: 0.2s; }
+        .size-card:hover { border-color: #38bdf8; transform: translateY(-3px); }
+        .size-card h3 { margin: 0; font-size: 20px; color: #fbbf24; }
+        .config-box { background: #1e293b; padding: 15px; border-radius: 15px; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        
+        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #38bdf8; }
+        input:checked + .slider:before { transform: translateX(30px); }
+
+        #game-screen { display: none; width: 100%; flex-direction: column; align-items: center; position: relative; }
+        .pause-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-bottom: 10px; }
+        #grid { display: grid; gap: 6px; width: 85vw; max-width: 380px; aspect-ratio: 1; margin: 10px auto; }
+        .cell { background: #1e293b; border-radius: 6px; cursor: pointer; border: 1px solid #334155; transition: background-color 0.2s, box-shadow 0.2s; }
+        .cell.on { background: #fbbf24; border-color: #fef08a; box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
+
+        #countdown-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: bold; color: #38bdf8; z-index: 100; pointer-events: none; text-shadow: 0 0 30px rgba(56, 189, 248, 0.6); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 25px; border: 3px solid #fbbf24; text-align: left; width: 85%; max-width: 400px; display: flex; flex-direction: column; }
+        .btn-action { background: #fbbf24; color: #451a03; padding: 12px 24px; border-radius: 10px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; max-width: 250px; margin: 8px 0; text-align: center; }
+        .status-bar { display: flex; gap: 20px; color: #38bdf8; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        
+        .footer-nav { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .footer-nav a.hub-link { color: #38bdf8; text-decoration: none; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        .footer-nav a.hub-link:hover { text-decoration: underline; opacity: 0.8; }
+        .footer-nav .sub-links { display: flex; gap: 15px; }
+        .footer-nav .sub-link { color: #94a3b8; text-decoration: none; font-size: 12px; opacity: 0.7; cursor: pointer; }
+
+        /* About用テキストスタイル */
+        .about-text h2 { color: #fbbf24; font-size: 20px; border-bottom: 2px solid #334155; padding-bottom: 8px; margin: 0 0 15px 0; text-align: left; width: 100%; }
+        .about-text h3 { color: #38bdf8; font-size: 16px; margin: 15px 0 5px 0; align-self: flex-start; }
+        .about-text p { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0; }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1100;"></canvas>
+
+<div class="container">
+    <div id="game-menu">
+        <div class="menu-title">リバース・グリッド</div>
+        <div class="config-box">
+            <span style="font-weight:bold;">ランダム配置</span>
+            <label class="switch">
+                <input type="checkbox" id="random-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="size-grid">
+            <div class="size-card" onclick="startGame(3)"><h3>3 × 3</h3><p>Easy</p></div>
+            <div class="size-card" onclick="startGame(4)"><h3>4 × 4</h3><p>Normal</p></div>
+            <div class="size-card" onclick="startGame(5)"><h3>5 × 5</h3><p>Hard</p></div>
+            <div class="size-card" onclick="startGame(6)"><h3>6 × 6</h3><p>Extra</p></div>
+        </div>
+        
+        <div class="footer-nav">
+            <a href="index.html" class="hub-link">🎮 ほかのミニゲームはこちら</a>
+            <div class="sub-links">
+                <span class="sub-link" onclick="openAbout()">このゲームについて</span>
+                <a href="privacy-policy.html" class="sub-link">プライバシーポリシー</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen">
+        <div id="countdown-overlay">READY</div>
+        <button class="pause-btn" onclick="togglePause()">II PAUSE</button>
+        <div class="status-bar">
+            <span>手数: <span id="move-count">0</span></span>
+            <span>タイム: <span id="timer-val">0.0</span>s</span>
+        </div>
+        <div id="grid"></div>
+        <div style="color:#fbbf24; font-size: 12px; margin-top:5px;">全マスを黄色にせよ</div>
+    </div>
+</div>
+
+<div id="about-modal" class="modal" onclick="closeAbout()">
+    <div class="modal-content about-text" onclick="event.stopPropagation()">
+        <h2>🟦 リバース・グリッド-about</h2>
+        <p>タップした箇所の周囲が反転する連鎖系パズルです。限られた手数で全てのパネルを揃える必要があり、数学的な「論理的思考能力」が試されます。</p>
+        
+        <h3>🔍 ロジックの仕組み</h3>
+        <p>このパズルは「排他的論理和（XOR）」の概念を応用しています。二手三手先を予測するトレーニングは、プログラミング的思考や戦略的な問題解決能力を養うのに非常に有効です。</p>
+        
+        <h3>🎓 脳トレとしての活用</h3>
+        <p>直感的な操作でワーキングメモリをフル活用できるよう設計しました。最短クリアを目指して、自分なりの必勝パターンを見つけ出してください。</p>
+        
+        <button class="btn-action" style="background:#475569; color:white; margin-top:20px;" onclick="closeAbout()">閉じる</button>
+    </div>
+</div>
+
+<div id="pause-modal" class="modal">
+    <div class="modal-content" style="align-items: center; text-align: center;">
+        <h2 style="color: #fbbf24; margin: 0 0 20px 0;">PAUSED</h2>
+        <button class="btn-action" onclick="togglePause()">ゲームに戻る</button>
+        <button class="btn-action" style="background:#475569; color:white;" onclick="retryGame()">リスタート</button>
+        <button class="btn-action" style="background:#475569; color:white;" onclick="backToMenu()">メニューに戻る</button>
+    </div>
+</div>
+
+<div id="result-modal" class="modal">
+    <div class="modal-content" style="align-items: center; text-align: center;">
+        <h2 style="color: #fbbf24; font-size: 32px; margin: 0 0 15px 0;">クリア！！</h2>
+        <div style="font-size: 18px; margin-bottom: 25px; color: #38bdf8; font-weight: bold;">
+            <div id="res-moves"></div>
+            <div id="res-time"></div>
+        </div>
+        <button class="btn-action" onclick="retryGame()">もう一度挑戦する</button>
+        <button class="btn-action" style="background:#38bdf8; color:#020617;" onclick="shareResult()">結果をシェアする</button>
+        <button class="btn-action" style="background:#475569; color:white;" onclick="backToMenu()">メニューに戻る</button>
+    </div>
+</div>
+
+<script>
+    let size = 5; let gridData = []; let moves = 0;
+    let startTime; let timerInterval; let finalTimeStr = "";
+    let isPaused = false; let pauseStartTime; let totalPausedTime = 0;
+    let isCountingDown = false;
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    window.onload = function() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    
+    // Aboutモーダルの制御
+    function openAbout() { document.getElementById('about-modal').style.display = 'flex'; }
+    function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
+
+    function backToMenu() {
+        clearInterval(timerInterval);
+        document.getElementById('game-menu').style.display = 'flex';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('pause-modal').style.display = 'none';
+        document.getElementById('result-modal').style.display = 'none';
+        isPaused = false; isCountingDown = false;
+        particles = []; ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+
+    function retryGame() {
+        isPaused = false;
+        document.getElementById('pause-modal').style.display = 'none';
+        document.getElementById('result-modal').style.display = 'none';
+        setupGameBoard(size); 
+        startCountdown();
+    }
+
+    function startCountdown() {
+        isCountingDown = true;
+        const overlay = document.getElementById('countdown-overlay');
+        overlay.innerText = "READY"; overlay.style.display = "block";
+        setTimeout(() => {
+            overlay.innerText = "GO!";
+            setTimeout(() => { overlay.style.display = "none"; isCountingDown = false; startTime = Date.now(); startTimer(); }, 500);
+        }, 1000);
+    }
+
+    function togglePause() {
+        if (isCountingDown) return;
+        if (!isPaused) { isPaused = true; pauseStartTime = Date.now(); clearInterval(timerInterval); document.getElementById('pause-modal').style.display = 'flex'; }
+        else { isPaused = false; totalPausedTime += (Date.now() - pauseStartTime); document.getElementById('pause-modal').style.display = 'none'; startTimer(); }
+    }
+
+    function setupGameBoard(selectedSize) {
+        size = selectedSize; moves = 0; totalPausedTime = 0; isPaused = false;
+        const isRandom = document.getElementById('random-toggle').checked;
+        document.getElementById('game-menu').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        const gridEl = document.getElementById('grid');
+        gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        gridEl.innerHTML = '';
+        
+        gridData = Array(size * size).fill(true);
+        for (let i = 0; i < size * size; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell on'; cell.id = 'cell-' + i;
+            cell.onclick = () => toggle(i);
+            gridEl.appendChild(cell);
+        }
+
+        if (isRandom) {
+            let maxYellow;
+            if (size === 3) maxYellow = 2;
+            else if (size === 4) maxYellow = 4;
+            else if (size === 5) maxYellow = 6;
+            else maxYellow = 9;
+
+            for (let i = 0; i < 10; i++) {
+                toggle(Math.floor(Math.random() * (size * size)), true);
+            }
+            let safetySwitch = 0;
+            while (gridData.filter(v => v === true).length > maxYellow && safetySwitch < 150) {
+                toggle(Math.floor(Math.random() * (size * size)), true);
+                safetySwitch++;
+            }
+        } else {
+            gridData = Array(size * size).fill(false);
+            for(let i=0; i<size*size; i++) document.getElementById('cell-'+i).classList.remove('on');
+        }
+        moves = 0; document.getElementById('move-count').innerText = moves;
+        document.getElementById('timer-val').innerText = "0.0";
+    }
+
+    function startTimer() { clearInterval(timerInterval); timerInterval = setInterval(() => { document.getElementById('timer-val').innerText = ((Date.now() - startTime - totalPausedTime) / 1000).toFixed(1); }, 100); }
+    function startGame(selectedSize) { setupGameBoard(selectedSize); startCountdown(); }
+
+    function toggle(index, isShuffle = false) {
+        if ((isPaused || isCountingDown) && !isShuffle) return;
+        const row = Math.floor(index / size); const col = index % size;
+        const targets = [[row, col], [row-1, col], [row+1, col], [row, col-1], [row, col+1]];
+        targets.forEach(([r, c]) => {
+            if (r >= 0 && r < size && c >= 0 && c < size) {
+                const idx = r * size + c;
+                gridData[idx] = !gridData[idx];
+                const cell = document.getElementById('cell-' + idx);
+                if (cell) { if (gridData[idx]) cell.classList.add('on'); else cell.classList.remove('on'); }
+            }
+        });
+        if (!isShuffle) { moves++; document.getElementById('move-count').innerText = moves; if (gridData.every(v => v === true)) showClear(); }
+    }
+
+    function showClear() {
+        clearInterval(timerInterval);
+        finalTimeStr = ((Date.now() - startTime - totalPausedTime) / 1000).toFixed(2);
+        document.getElementById('res-moves').innerText = `手数: ${moves} 手`;
+        document.getElementById('res-time').innerText = `タイム: ${finalTimeStr} 秒`;
+        setTimeout(() => { document.getElementById('result-modal').style.display = 'flex'; spawnConfetti(); }, 300);
+    }
+
+    function shareResult() {
+        const baseText = `🟦【リバース・グリッド：Time Attack】\nサイズ: ${size}×${size}\n手数: ${moves}手 / タイム: ${finalTimeStr}秒\n\n▼ほかにも遊ぶ\n${window.location.origin}\n\n#リバースグリッド #ブラウザゲーム`;
+        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(baseText)}`;
+        window.location.href = tweetUrl;
+    }
+
+    function spawnConfetti() {
+        for(let i=0; i<100; i++) { particles.push({ x: Math.random()*canvas.width, y: -20, size: Math.random()*8+4, color: `hsl(${Math.random()*360},80%,60%)`, vx: Math.random()*4-2, vy: Math.random()*5+2 }); }
+        updateConfetti();
+    }
+    function updateConfetti() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); if(p.y > canvas.height) particles.splice(i, 1); });
+        if(particles.length > 0) requestAnimationFrame(updateConfetti);
+    }
+</script>
+</body>
+</html>

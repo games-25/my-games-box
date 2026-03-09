@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ナンバー・タップ - My Games Box</title>
+    <style>
+        :root { --bg: #020617; --card-bg: #1e293b; --accent: #38bdf8; --gold: #fbbf24; --error: #f43f5e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; height: 100vh; overflow: hidden; touch-action: none; user-select: none; display: flex; flex-direction: row; justify-content: center; }
+        
+        .container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; height: 100%; box-sizing: border-box; }
+        
+        .status-bar { display: flex; gap: 20px; align-items: baseline; margin-bottom: 5px; }
+        .timer-display { font-size: 36px; font-weight: bold; color: var(--gold); font-variant-numeric: tabular-nums; }
+        .miss-counter { font-size: 18px; color: var(--error); font-weight: bold; }
+        
+        .game-area { position: relative; width: 90vw; max-width: 420px; margin: 0 auto; }
+        
+        .pause-trigger { position: absolute; top: -42px; right: 0; background: #334155; border: 1px solid var(--accent); color: white; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; z-index: 50; display: flex; align-items: center; justify-content: center; }
+
+        .grid { display: grid; gap: 8px; width: 100%; aspect-ratio: 1/1; }
+        .num-btn { background: var(--card-bg); border: 2px solid #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; cursor: pointer; transition: 0.1s; box-shadow: 0 4px #0f172a; }
+        .num-btn:active { transform: translateY(2px); box-shadow: 0 2px #0f172a; }
+        .num-btn.correct { background: var(--accent); color: var(--bg); opacity: 0.2; transform: scale(0.85); box-shadow: none; pointer-events: none; }
+        .num-btn.error { background: var(--error); animation: shake 0.2s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.98); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; border: 3px solid var(--accent); width: 90%; max-width: 320px; text-align: left; }
+        .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; width: 100%; }
+        .btn-action { padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; color: white; display: block; width: 100%; box-sizing: border-box; }
+        .btn-primary { background: var(--accent); color: #0f172a; }
+        .btn-retry { background: var(--gold); color: #451a03; }
+        .btn-menu { background: #475569; }
+
+        .footer-links { margin-top: 25px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .about-link { color: var(--accent); cursor: pointer; font-size: 14px; font-weight: bold; text-decoration: underline; }
+        .policy-link { color: #94a3b8; text-decoration: none; font-size: 11px; opacity: 0.7; }
+
+        /* About用テキスト */
+        .about-text h2 { color: var(--gold); font-size: 19px; margin: 0 0 15px 0; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .about-text h3 { color: var(--accent); font-size: 15px; margin: 15px 0 5px 0; }
+        .about-text p { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0; }
+
+        #countdown-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.8); z-index: 500; align-items: center; justify-content: center; }
+        #countdown-text { font-size: 100px; font-weight: bold; color: var(--gold); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-bar">
+        <div class="timer-display" id="timer">0.000</div>
+        <div class="miss-counter" id="live-miss">MISS: 0</div>
+    </div>
+
+    <div class="game-area">
+        <button class="pause-trigger" id="pause-btn" style="display:none;" onclick="pauseGame()">‖</button>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <div id="menu-overlay" class="overlay">
+        <div style="font-size: 26px; color: var(--gold); margin-bottom: 20px; font-weight: bold;">🔢 ナンバー・タップ</div>
+        <div class="modal-btns" style="max-width: 240px;">
+            <button class="btn-action" style="background:#4ade80; color:#064e3b" onclick="selectMode(3)">3 × 3 (EASY)</button>
+            <button class="btn-action" style="background:#38bdf8; color:#082f49" onclick="selectMode(4)">4 × 4 (NORMAL)</button>
+            <button class="btn-action" style="background:#a855f7; color:#2e1065" onclick="selectMode(5)">5 × 5 (HARD)</button>
+            <button class="btn-action" style="background:#f43f5e; color:#4c0519" onclick="selectMode(6)">6 × 6 (EXPERT)</button>
+        </div>
+        
+        <div class="footer-links">
+            <span class="about-link" onclick="openAbout()">このゲームについて</span>
+            <a href="index.html" style="color:white; text-decoration:none; font-size:14px;">🏠 ほかのゲームへ</a>
+            <a href="privacy-policy.html" class="policy-link">プライバシーポリシー</a>
+        </div>
+    </div>
+
+    <div id="about-modal" class="overlay" style="display: none;" onclick="closeAbout()">
+        <div class="modal-content about-text" onclick="event.stopPropagation()">
+            <h2>🔢 ナンバータップ-about</h2>
+            <p>ランダムに配置された数字を1から順番にタップしていく、シンプルながらも奥が深い動体視力パズルです。</p>
+            <h3>👁️ 周辺視野のトレーニング</h3>
+            <p>次の数字を「探す」のではなく、画面全体をぼんやりと捉える「周辺視野」を活用することが攻略のコツです。これはスポーツや読書のスピードアップにも繋がると言われています。</p>
+            <h3>⚡ 反射神経と集中力</h3>
+            <p>ミスをせずに最速を目指すことで、脳の処理速度（情報処理能力）を刺激します。日々の記録更新に挑戦してみてください。</p>
+            <button class="btn-action btn-menu" style="margin-top:20px;" onclick="closeAbout()">閉じる</button>
+        </div>
+    </div>
+
+    <div id="pause-overlay" class="overlay" style="display: none;">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; color: var(--gold);">PAUSED</div>
+            <div class="modal-btns">
+                <button class="btn-action btn-primary" onclick="resumeGame()">ゲームに戻る</button>
+                <button class="btn-action btn-retry" onclick="startCountdown()">リスタート</button>
+                <button class="btn-action btn-menu" onclick="backToModeSelect()">難易度選択に戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="overlay" style="display: none;">
+        <div class="modal-content" style="text-align: center;">
+            <div id="mode-label" style="color: var(--accent); font-weight: bold;">CLEAR!</div>
+            <div id="final-time" style="font-size: 40px; font-weight: bold; color: var(--gold); margin: 5px 0;">0.000</div>
+            <div id="final-miss" style="font-size: 18px; color: var(--error); font-weight: bold; margin-bottom: 15px;">MISS: 0</div>
+            <div class="modal-btns">
+                <button class="btn-action" style="background:#1d9bf0; color:white;" onclick="shareResult()">結果をXでシェア</button>
+                <button class="btn-action btn-retry" onclick="startCountdown()">もう一度挑戦</button>
+                <button class="btn-action btn-menu" onclick="backToModeSelect()">難易度選択に戻る</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="countdown-overlay" class="overlay" style="display: none;">
+    <div id="countdown-text">3</div>
+</div>
+
+<canvas id="confetti-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000;"></canvas>
+
+<script>
+    let gridSize, maxNum, currentNum, startTime, timerInterval, isPlaying = false, isPaused = false, elapsedBeforePause = 0;
+    let missCount = 0;
+
+    const grid = document.getElementById('grid');
+    const timerDisplay = document.getElementById('timer');
+    const liveMiss = document.getElementById('live-miss');
+    const pauseBtn = document.getElementById('pause-btn');
+
+    function openAbout() { document.getElementById('about-modal').style.display = 'flex'; }
+    function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
+
+    function selectMode(size) {
+        gridSize = size;
+        maxNum = size * size;
+        document.getElementById('menu-overlay').style.display = 'none';
+        startCountdown();
+    }
+
+    function backToModeSelect() {
+        document.getElementById('result-modal').style.display = 'none';
+        document.getElementById('pause-overlay').style.display = 'none';
+        document.getElementById('menu-overlay').style.display = 'flex';
+        pauseBtn.style.display = 'none';
+        isPlaying = false;
+        clearInterval(timerInterval);
+    }
+
+    function startCountdown() {
+        document.getElementById('result-modal').style.display = 'none';
+        document.getElementById('pause-overlay').style.display = 'none';
+        document.getElementById('countdown-overlay').style.display = 'flex';
+        pauseBtn.style.display = 'none';
+        grid.innerHTML = ''; 
+        timerDisplay.innerText = "0.000";
+        missCount = 0;
+        liveMiss.innerText = "MISS: 0";
+        let count = 3;
+        document.getElementById('countdown-text').innerText = count;
+        
+        const cd = setInterval(() => {
+            count--;
+            if (count > 0) document.getElementById('countdown-text').innerText = count;
+            else if (count === 0) { 
+                document.getElementById('countdown-text').innerText = "GO!"; 
+                createGrid(); 
+            }
+            else { 
+                clearInterval(cd); 
+                document.getElementById('countdown-overlay').style.display = 'none'; 
+                pauseBtn.style.display = 'flex'; 
+                startGame(); 
+            }
+        }, 800);
+    }
+
+    function createGrid() {
+        grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        let fontSize = gridSize >= 5 ? '18px' : '26px';
+        const nums = Array.from({length: maxNum}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        nums.forEach(n => {
+            const btn = document.createElement('div');
+            btn.className = 'num-btn';
+            btn.style.fontSize = fontSize;
+            btn.innerText = n;
+            btn.onclick = () => handleTap(n, btn);
+            grid.appendChild(btn);
+        });
+    }
+
+    function startGame() {
+        isPlaying = true; isPaused = false;
+        currentNum = 1;
+        startTime = Date.now();
+        elapsedBeforePause = 0;
+        runTimer();
+    }
+
+    function runTimer() {
+        timerInterval = setInterval(() => {
+            const totalElapsed = (Date.now() - startTime + elapsedBeforePause) / 1000;
+            timerDisplay.innerText = totalElapsed.toFixed(3);
+        }, 10);
+    }
+
+    function pauseGame() {
+        if (!isPlaying || isPaused) return;
+        isPaused = true;
+        clearInterval(timerInterval);
+        elapsedBeforePause += (Date.now() - startTime);
+        document.getElementById('pause-overlay').style.display = 'flex';
+    }
+
+    function resumeGame() {
+        isPaused = false;
+        startTime = Date.now();
+        document.getElementById('pause-overlay').style.display = 'none';
+        runTimer();
+    }
+
+    function handleTap(num, btn) {
+        if (!isPlaying || isPaused || btn.classList.contains('correct')) return;
+        if (num === currentNum) {
+            btn.classList.add('correct');
+            currentNum++;
+            if (currentNum > maxNum) gameClear();
+        } else {
+            missCount++;
+            liveMiss.innerText = `MISS: ${missCount}`;
+            btn.classList.add('error');
+            setTimeout(() => btn.classList.remove('error'), 200);
+        }
+    }
+
+    function gameClear() {
+        isPlaying = false;
+        clearInterval(timerInterval);
+        document.getElementById('mode-label').innerText = `${gridSize} × ${gridSize} CLEAR!`;
+        document.getElementById('final-time').innerText = timerDisplay.innerText;
+        document.getElementById('final-miss').innerText = `MISS: ${missCount}`;
+        document.getElementById('result-modal').style.display = 'flex';
+        pauseBtn.style.display = 'none';
+        spawnConfetti();
+    }
+
+    function shareResult() {
+        const time = document.getElementById('final-time').innerText;
+        const text = `🔢【ナンバー・タップ】\nモード: ${gridSize}×${gridSize}\n記録: ${time} 秒 (ミス: ${missCount}回)！\n\n▼My Games Boxで挑戦\n${window.location.origin}\n#ナンバータップ #ブラウザゲーム`;
+        window.location.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    }
+
+    let particles = [];
+    function spawnConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        for(let i=0; i<80; i++) particles.push({x: Math.random()*canvas.width, y: -20, size: Math.random()*7+4, color: `hsl(${Math.random()*360},80%,60%)`, vx: Math.random()*4-2, vy: Math.random()*5+2});
+        function update() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy;
+                ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
+                if(p.y > canvas.height) particles.splice(i, 1);
+            });
+            if(particles.length > 0) requestAnimationFrame(update);
+        }
+        update();
+    }
+</script>
+</body>
+</html>
