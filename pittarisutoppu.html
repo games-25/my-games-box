@@ -4,238 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ぴったりストップ - My Games Box</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2656558994804135" crossorigin="anonymous"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #020617; color: white; text-align: center; margin: 0; height: 100vh; overflow: hidden; touch-action: none; user-select: none; display: flex; flex-direction: column; }
         
+        /* 広告レイアウト設定 */
+        .ad-space { background: rgba(30, 41, 59, 0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* 全画面広告オーバーレイ */
+        #interstitial-ad { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .ad-window { background: #1e293b; padding: 20px; border-radius: 15px; border: 2px solid #334155; display: flex; flex-direction: column; align-items: center; }
+        .ad-close-btn { margin-top: 20px; padding: 12px 24px; background: #fbbf24; color: #451a03; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; font-size: 18px; }
+
+        @media (min-width: 1200px) {
+            .side-ad { position: fixed; top: 0; bottom: 0; width: 160px; z-index: 100; }
+            .ad-left { left: 0; } .ad-right { right: 0; }
+            .top-ad, .bottom-ad { display: none !important; }
+            .container { margin: 0 160px; height: 100%; }
+        }
+        @media (max-width: 1199px) {
+            .side-ad { display: none !important; }
+            .top-ad { width: 100%; height: 60px; border-bottom: 1px solid #334155; }
+            .bottom-ad { width: 100%; height: 60px; border-top: 1px solid #334155; }
+        }
+
         .container { flex-grow: 1; position: relative; display: flex; flex-direction: column; padding: 10px; align-items: center; justify-content: center; }
         #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
-        #menu { display: flex; flex-direction: column; gap: 12px; z-index: 20; width: 100%; max-width: 400px; margin: auto; }
-        .menu-btn { padding: 18px; font-size: 18px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: transform 0.1s; }
-        .menu-btn:active { transform: scale(0.95); }
+        #menu { display: flex; flex-direction: column; gap: 12px; z-index: 20; width: 100%; max-width: 400px; }
+        .menu-btn { padding: 18px; font-size: 18px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; }
         .easy { background: #4ade80; color: #064e3b; } 
         .normal { background: #38bdf8; color: #082f49; }
         .hard { background: #fbbf24; color: #451a03; } 
         .extra { background: #f43f5e; color: white; }
 
-        #game-screen { display: none; width: 100%; max-width: 600px; margin: auto; }
+        #game-screen { display: none; width: 100%; max-width: 500px; }
         #target-display { font-size: 24px; background: #1e293b; padding: 12px; border-radius: 15px; border: 2px solid #38bdf8; margin-bottom: 15px; }
         #goal-text { font-weight: bold; color: #fbbf24; }
-        
-        #current-val { font-size: 44px; font-weight: bold; color: #fbbf24; margin: 10px 0; height: 60px; transition: opacity 0.5s ease-in-out; }
-        #ruler-marks { transition: opacity 0.5s ease-in-out; }
-
+        #current-val { font-size: 44px; font-weight: bold; color: #fbbf24; margin: 10px 0; height: 60px; }
         #instant-msg { font-size: 30px; font-weight: bold; height: 40px; margin-bottom: 10px; }
         
         #ruler-window { position: relative; width: 100%; height: 100px; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 4px solid #334155; }
-        #ruler-tape { position: absolute; left: 0; top: 0; height: 100%; width: 50000px; background: #fbbf24; will-change: transform; }
+        #ruler-tape { position: absolute; left: 0; top: 0; height: 100%; width: 50000px; background: #fbbf24; }
         .mark { position: absolute; top: 0; width: 1px; background: #334155; height: 15px; }
         .mark.meter { height: 45px; width: 2px; background: #000; }
         #indicator { position: absolute; left: 25%; top: 0; width: 4px; height: 100%; background: #f43f5e; z-index: 10; margin-left: -2px; }
 
-        .footer-links { margin-top: 30px; z-index: 60; display: flex; flex-direction: column; gap: 12px; }
-        .footer-links a, .footer-links span { color: #38bdf8; text-decoration: none; font-size: 14px; font-weight: bold; cursor: pointer; }
-        
-        /* 共通モーダルスタイル */
-        #result-modal, #about-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 25px; width: 85%; max-width: 400px; border: 3px solid #fbbf24; text-align: left; }
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 25px; width: 85%; max-width: 400px; border: 3px solid #fbbf24; }
         .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .modal-btn { padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; }
-        .btn-share { background: #1d9bf0; color: white; }
+        .modal-btn { padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-retry { background: #fbbf24; color: #451a03; }
         .btn-menu { background: #475569; color: white; }
-
-        /* About用スタイル */
-        .about-text h2 { color: #fbbf24; font-size: 20px; border-bottom: 2px solid #334155; padding-bottom: 8px; margin-top: 0; }
-        .about-text h3 { color: #38bdf8; font-size: 16px; margin-top: 15px; margin-bottom: 5px; }
-        .about-text p { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0; }
     </style>
 </head>
 <body>
 
+<div class="ad-space side-ad ad-left">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-2656558994804135"
+         data-ad-slot="0000000001"
+         data-ad-format="vertical"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<div class="ad-space side-ad ad-right">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-2656558994804135"
+         data-ad-slot="0000000002"
+         data-ad-format="vertical"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<div id="interstitial-ad">
+    <div class="ad-window">
+        <div style="color: #94a3b8; font-size: 12px; margin-bottom: 10px;">ADVERTISEMENT</div>
+        <div style="width: 300px; height: 250px; background: #000;">
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:300px;height:250px"
+                 data-ad-client="ca-pub-2656558994804135"
+                 data-ad-slot="0000000003"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+        <button class="ad-close-btn" onclick="closeFullAd()">広告を閉じて進む</button>
+    </div>
+</div>
+
 <canvas id="confetti-canvas"></canvas>
 
 <div class="container">
+    <div class="ad-space top-ad">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-2656558994804135"
+             data-ad-slot="0000000004"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
     <div id="menu">
         <h1 style="color: #fbbf24; margin-bottom: 20px;">📏 ぴったりストップ</h1>
         <button class="menu-btn easy" onclick="selectMode('easy')">EASY (目盛りあり)</button>
         <button class="menu-btn normal" onclick="selectMode('normal')">NORMAL (途中で消える)</button>
         <button class="menu-btn hard" onclick="selectMode('hard')">HARD (小数点2桁)</button>
         <button class="menu-btn extra" onclick="selectMode('extra')">EXTRA (最難関)</button>
-        
-        <div class="footer-links">
-            <a href="index.html">▶ ほかのミニゲームはこちら</a>
-            <div style="display: flex; justify-content: center; gap: 15px;">
-                <span onclick="openAbout()" style="color:#94a3b8; font-weight:normal; font-size:12px;">このゲームについて</span>
-                <a href="privacy-policy.html" style="color:#64748b; font-weight:normal; font-size:12px;">プライバシーポリシー</a>
-            </div>
-        </div>
     </div>
 
     <div id="game-screen">
         <div id="target-display">目標: <span id="goal-text">0.0</span> m</div>
         <div id="instant-msg"></div> 
         <div id="current-val">0.0 m</div>
-        
         <div id="ruler-window">
             <div id="indicator"></div>
-            <div id="ruler-tape">
-                <div id="ruler-marks"></div>
-            </div>
+            <div id="ruler-tape"><div id="ruler-marks"></div></div>
         </div>
-        
-        <p style="color: #38bdf8; margin-top: 25px; font-weight: bold; font-size: 1.2em; animation: pulse 1.5s infinite;">タップでストップ！</p>
+        <p style="color: #38bdf8; margin-top: 25px; font-weight: bold;">タップでストップ！</p>
     </div>
-</div>
 
-<div id="about-modal" onclick="closeAbout()">
-    <div class="modal-content about-text" onclick="event.stopPropagation()">
-        <h2>📏 ぴったりストップ-about</h2>
-        <p>このゲームは、指定された目標数値でタイマーをピタッと止める「体内時計」測定ツールです。0.01秒のズレも許されない緊張感の中で、直感と反射神経を研ぎ澄ませます。</p>
-        
-        <h3>💡 攻略のヒント</h3>
-        <p>目で見える数字の変化には、脳が認識するまでのわずかなタイムラグが生じます。一定のリズムを刻む「メトロノーム走法」を意識すると、ピッタリ賞への到達率が向上します。</p>
-        
-        <h3>🧠 期待される効果</h3>
-        <p>高度な集中を繰り返すことで、脳をフロー状態へ導きます。仕事や勉強の合間のリフレッシュとして、集中力をリセットするのに最適なミニゲームです。</p>
-        
-        <div class="modal-btns">
-            <button class="modal-btn btn-menu" onclick="closeAbout()">閉じる</button>
-        </div>
+    <div class="ad-space bottom-ad">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-2656558994804135"
+             data-ad-slot="0000000005"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 </div>
 
 <div id="result-modal">
     <div class="modal-content">
-        <div id="res-msg" style="font-size: 32px; font-weight: bold; margin-bottom: 10px; text-align: center;">判定</div>
-        <div id="res-val-text" style="font-size: 36px; font-weight: bold; color: #fbbf24; text-align: center;">0.00 m</div>
-        <div id="res-detail" style="color: #94a3b8; margin-bottom: 15px; text-align: center;">(差: 0.00m)</div>
+        <div id="res-msg" style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">判定</div>
+        <div id="res-val-text" style="font-size: 36px; font-weight: bold; color: #fbbf24;">0.00 m</div>
+        <div id="res-detail" style="color: #94a3b8; margin-bottom: 15px;"></div>
         <div class="modal-btns">
-            <button class="modal-btn btn-share" onclick="shareResult()">結果をXでシェア</button>
-            <button class="modal-btn btn-retry" onclick="initGame()">もう一度挑戦</button>
-            <button class="modal-btn btn-menu" onclick="handleBackToMenu()">メニューへ戻る</button>
+            <button class="modal-btn btn-retry" onclick="handleRetryAction()">もう一度挑戦</button>
+            <button class="modal-btn btn-menu" onclick="handleMenuAction()">メニューへ戻る</button>
         </div>
     </div>
 </div>
 
 <script>
-    let mode = 'easy'; 
-    let gameState = 'IDLE'; 
-    let goalM = 0, currentX = 0, startTime = 0;
+    let mode = 'easy', gameState = 'IDLE', goalM = 0, currentX = 0, startTime = 0;
     const PIXELS_PER_METER = 400; 
-    
-    const canvas = document.getElementById('confetti-canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('confetti-canvas'), ctx = canvas.getContext('2d');
     let particles = [];
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    
-    // Aboutモーダルの制御
-    function openAbout() { document.getElementById('about-modal').style.display = 'flex'; }
-    function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
+    // --- 広告カウント管理 ---
+    let retryCount = parseInt(localStorage.getItem('p_retry_count') || "0");
+    let menuCount = parseInt(localStorage.getItem('p_menu_count') || "0");
+    let pendingAction = null;
 
-    function handleBackToMenu() {
-        location.reload(); 
+    function showFullAd(callback) {
+        pendingAction = callback;
+        document.getElementById('interstitial-ad').style.display = 'flex';
     }
+
+    function closeFullAd() {
+        document.getElementById('interstitial-ad').style.display = 'none';
+        if (pendingAction) { pendingAction(); pendingAction = null; }
+    }
+
+    function handleRetryAction() {
+        retryCount++;
+        localStorage.setItem('p_retry_count', retryCount);
+        if (retryCount % 6 === 0) { showFullAd(() => initGame()); } else { initGame(); }
+    }
+
+    function handleMenuAction() {
+        menuCount++;
+        localStorage.setItem('p_menu_count', menuCount);
+        if (menuCount % 3 === 0) { showFullAd(() => location.reload()); } else { location.reload(); }
+    }
+
+    // --- ゲーム本体ロジック ---
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
     function createMarks() {
-        const container = document.getElementById('ruler-marks');
-        container.innerHTML = "";
-        const windowWidth = document.getElementById('ruler-window').offsetWidth;
-        const startOffset = windowWidth * 0.25;
-
+        const container = document.getElementById('ruler-marks'); container.innerHTML = "";
+        const startOffset = document.getElementById('ruler-window').offsetWidth * 0.25;
         for (let i = 0; i <= 150; i++) { 
-            const mark = document.createElement('div');
-            mark.className = i % 10 === 0 ? 'mark meter' : 'mark';
-            mark.style.left = (startOffset + i * (PIXELS_PER_METER / 10)) + 'px';
-            container.appendChild(mark);
+            const mark = document.createElement('div'); mark.className = i % 10 === 0 ? 'mark meter' : 'mark';
+            mark.style.left = (startOffset + i * (PIXELS_PER_METER / 10)) + 'px'; container.appendChild(mark);
         }
     }
-
+    
     function selectMode(m) {
-        mode = m;
-        document.getElementById('menu').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
-        setTimeout(createMarks, 100);
-        initGame();
+        mode = m; document.getElementById('menu').style.display = 'none'; document.getElementById('game-screen').style.display = 'block';
+        setTimeout(createMarks, 100); initGame();
     }
-
+    
     function initGame() {
         document.getElementById('result-modal').style.display = 'none';
         document.getElementById('instant-msg').innerText = "";
-        particles = [];
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-
+        particles = []; ctx.clearRect(0,0,canvas.width,canvas.height);
         const digits = (mode === 'hard' || mode === 'extra') ? 2 : 1;
         goalM = (Math.random() * 1.0 + 4.5).toFixed(digits);
-        
         document.getElementById('goal-text').innerText = goalM;
         currentX = 0;
         document.getElementById('ruler-tape').style.transform = `translateX(0px)`;
-        
-        document.getElementById('ruler-marks').style.transition = "none";
-        document.getElementById('current-val').style.transition = "none";
         document.getElementById('ruler-marks').style.opacity = "1";
         document.getElementById('current-val').style.opacity = "1";
         document.getElementById('current-val').innerText = (0).toFixed(digits) + " m";
-        
         gameState = 'IDLE';
     }
-
+    
     function loop() {
         if (gameState !== 'RUNNING') return;
-        
         currentX -= 7.5; 
         document.getElementById('ruler-tape').style.transform = `translateX(${currentX}px)`;
-        
         const digits = (mode === 'hard' || mode === 'extra') ? 2 : 1;
         const currentM = (Math.abs(currentX) / PIXELS_PER_METER).toFixed(digits);
         document.getElementById('current-val').innerText = currentM + " m";
-
         if ((mode === 'normal' || mode === 'extra') && (Date.now() - startTime) / 1000 >= 2.5) {
-            document.getElementById('ruler-marks').style.transition = "opacity 0.5s ease-in-out";
-            document.getElementById('current-val').style.transition = "opacity 0.5s ease-in-out";
-            document.getElementById('ruler-marks').style.opacity = "0";
-            document.getElementById('current-val').style.opacity = "0";
+            document.getElementById('ruler-marks').style.opacity = "0"; document.getElementById('current-val').style.opacity = "0";
         }
-
-        if (Math.abs(currentX) > PIXELS_PER_METER * 12) {
-            stopGame();
-            showResult();
-        } else {
-            requestAnimationFrame(loop);
-        }
+        if (Math.abs(currentX) > PIXELS_PER_METER * 12) { stopGame(); showResult(); } 
+        else { requestAnimationFrame(loop); }
     }
-
+    
     function stopGame() {
         gameState = 'WAIT_RESULT'; 
-        document.getElementById('ruler-marks').style.transition = "none";
-        document.getElementById('current-val').style.transition = "none";
-        document.getElementById('ruler-marks').style.opacity = "1";
-        document.getElementById('current-val').style.opacity = "1";
-        
+        document.getElementById('ruler-marks').style.opacity = "1"; document.getElementById('current-val').style.opacity = "1";
         const digits = (mode === 'hard' || mode === 'extra') ? 2 : 1;
         const stoppedM = (Math.abs(currentX) / PIXELS_PER_METER).toFixed(digits);
         const diff = Math.abs(parseFloat(stoppedM) - parseFloat(goalM)).toFixed(digits);
-
         let res = { msg: "失敗...", color: "#3b82f6" };
-        if (parseFloat(diff) === 0) {
-            res = { msg: "ピッタリ！！", color: "#fbbf24" }; 
-            spawnConfetti();
-        } else if (parseFloat(diff) <= (digits === 2 ? 0.02 : 0.1)) {
-            res = { msg: "惜しい！", color: "#4ade80" }; 
-        }
-
+        if (parseFloat(diff) === 0) { res = { msg: "ピッタリ！！", color: "#fbbf24" }; spawnConfetti(); }
+        else if (parseFloat(diff) <= (digits === 2 ? 0.02 : 0.1)) { res = { msg: "惜しい！", color: "#4ade80" }; }
         const msgEl = document.getElementById('instant-msg');
-        msgEl.innerText = res.msg; 
-        msgEl.style.color = res.color;
-        msgEl.dataset.diff = diff; 
+        msgEl.innerText = res.msg; msgEl.style.color = res.color; msgEl.dataset.diff = diff; 
     }
-
+    
     function showResult() {
         gameState = 'FINISHED';
         const msgEl = document.getElementById('instant-msg');
@@ -245,57 +248,28 @@
         document.getElementById('res-detail').innerText = `(目標: ${goalM}m / 差: ${msgEl.dataset.diff}m)`;
         document.getElementById('result-modal').style.display = 'flex';
     }
-
-    function shareResult() {
-        const text = `📏【ぴったりストップ】\n難易度: ${mode.toUpperCase()}\n記録: ${document.getElementById('res-val-text').innerText}\n差: ${document.getElementById('instant-msg').dataset.diff}m\n\n▼My Games Boxで遊ぶ\n${window.location.origin}\n#ぴったりストップ #ブラウザゲーム`;
-        window.location.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-    }
-
+    
     function handleAction(e) {
-        // ボタンやモーダル、Aboutリンクをクリックした時はゲームを開始しない
-        if (e.target.closest('.modal-content') || e.target.closest('.footer-links') || e.target.closest('.menu-btn') || e.target.closest('#about-modal')) return;
+        if (e.target.closest('.modal-content') || e.target.closest('#interstitial-ad') || e.target.closest('.menu-btn')) return;
         if (e.type === 'touchstart') e.preventDefault(); 
-
-        if (gameState === 'IDLE') { 
-            gameState = 'RUNNING'; 
-            startTime = Date.now(); 
-            loop(); 
-        }
-        else if (gameState === 'RUNNING') {
-            stopGame();
-        }
-        else if (gameState === 'WAIT_RESULT') {
-            showResult();
-        }
+        if (gameState === 'IDLE') { gameState = 'RUNNING'; startTime = Date.now(); loop(); }
+        else if (gameState === 'RUNNING') { stopGame(); }
+        else if (gameState === 'WAIT_RESULT') { showResult(); }
     }
-
+    
     window.addEventListener('mousedown', handleAction);
     window.addEventListener('touchstart', handleAction, { passive: false });
-
+    
     function spawnConfetti() {
-        for(let i=0; i<100; i++) {
-            particles.push({
-                x: Math.random()*window.innerWidth, 
-                y: -20, 
-                size: Math.random()*7+4, 
-                color: `hsl(${Math.random()*360},80%,60%)`, 
-                vx: Math.random()*4-2, 
-                vy: Math.random()*5+3
-            });
-        }
+        for(let i=0; i<80; i++) particles.push({ x: Math.random()*window.innerWidth, y: -20, size: Math.random()*7+4, color: `hsl(${Math.random()*360},80%,60%)`, vx: Math.random()*4-2, vy: Math.random()*5+3 });
         updateConfetti();
     }
-
     function updateConfetti() {
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        particles.forEach((p, i) => { 
-            p.x += p.vx; p.y += p.vy; 
-            ctx.fillStyle = p.color; 
-            ctx.fillRect(p.x, p.y, p.size, p.size); 
-            if(p.y > canvas.height) particles.splice(i, 1); 
-        });
+        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); if(p.y > canvas.height) particles.splice(i, 1); });
         if(particles.length > 0) requestAnimationFrame(updateConfetti);
     }
 </script>
 </body>
 </html>
+
