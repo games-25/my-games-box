@@ -4,10 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ナンバー・タップ - My Games Box</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2656558994804135" crossorigin="anonymous"></script>
     <style>
         :root { --bg: #020617; --card-bg: #1e293b; --accent: #38bdf8; --gold: #fbbf24; --error: #f43f5e; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; height: 100vh; overflow: hidden; touch-action: none; user-select: none; display: flex; flex-direction: row; justify-content: center; }
         
+        /* 広告レイアウト用追加スタイル */
+        .ad-space { background: rgba(30, 41, 59, 0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #interstitial-ad { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .ad-window { background: #1e293b; padding: 20px; border-radius: 15px; border: 2px solid #334155; display: flex; flex-direction: column; align-items: center; }
+        .ad-close-btn { margin-top: 20px; padding: 12px 24px; background: #fbbf24; color: #451a03; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; font-size: 18px; }
+
+        @media (min-width: 1200px) {
+            .side-ad { position: fixed; top: 0; bottom: 0; width: 160px; z-index: 100; }
+            .ad-left { left: 0; } .ad-right { right: 0; }
+            .top-ad, .bottom-ad { display: none !important; }
+            .container { margin: 0 160px; height: 100%; }
+        }
+        @media (max-width: 1199px) {
+            .side-ad { display: none !important; }
+            .top-ad { width: 100%; height: 60px; border-bottom: 1px solid #334155; }
+            .bottom-ad { width: 100%; height: 60px; border-top: 1px solid #334155; }
+        }
+
         .container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; height: 100%; box-sizing: border-box; }
         
         .status-bar { display: flex; gap: 20px; align-items: baseline; margin-bottom: 5px; }
@@ -33,14 +52,12 @@
         .btn-retry { background: var(--gold); color: #451a03; }
         .btn-menu { background: #475569; }
 
-        /* リバース・グリッド風フッター設定 */
         .footer-nav { margin-top: 25px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
         .footer-nav a.hub-link { color: var(--accent); text-decoration: none; font-size: 16px; font-weight: bold; transition: 0.2s; }
         .footer-nav a.hub-link:hover { text-decoration: underline; opacity: 0.8; }
         .footer-nav .sub-links { display: flex; gap: 15px; }
         .footer-nav .sub-link { color: #94a3b8; text-decoration: none; font-size: 12px; opacity: 0.7; cursor: pointer; }
 
-        /* About用テキスト */
         .about-text h2 { color: var(--gold); font-size: 19px; margin: 0 0 15px 0; border-bottom: 1px solid #334155; padding-bottom: 10px; }
         .about-text h3 { color: var(--accent); font-size: 15px; margin: 15px 0 5px 0; }
         .about-text p { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 0; }
@@ -51,7 +68,32 @@
 </head>
 <body>
 
+<div class="ad-space side-ad ad-left">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2656558994804135" data-ad-slot="0000000001" data-ad-format="vertical"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-space side-ad ad-right">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2656558994804135" data-ad-slot="0000000002" data-ad-format="vertical"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<div id="interstitial-ad">
+    <div class="ad-window">
+        <div style="color: #94a3b8; font-size: 12px; margin-bottom: 10px;">ADVERTISEMENT</div>
+        <div style="width: 300px; height: 250px; background: #000;">
+            <ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-2656558994804135" data-ad-slot="0000000003"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+        <button class="ad-close-btn" onclick="closeFullAd()">広告を閉じて進む</button>
+    </div>
+</div>
+
 <div class="container">
+    <div class="ad-space top-ad">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2656558994804135" data-ad-slot="0000000004" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
     <div class="status-bar">
         <div class="timer-display" id="timer">0.000</div>
         <div class="miss-counter" id="live-miss">MISS: 0</div>
@@ -97,8 +139,8 @@
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; color: var(--gold);">PAUSED</div>
             <div class="modal-btns">
                 <button class="btn-action btn-primary" onclick="resumeGame()">ゲームに戻る</button>
-                <button class="btn-action btn-retry" onclick="startCountdown()">リスタート</button>
-                <button class="btn-action btn-menu" onclick="backToModeSelect()">難易度選択に戻る</button>
+                <button class="btn-action btn-retry" onclick="handleRetryAction()">リスタート</button>
+                <button class="btn-action btn-menu" onclick="handleMenuAction()">難易度選択に戻る</button>
             </div>
         </div>
     </div>
@@ -110,10 +152,15 @@
             <div id="final-miss" style="font-size: 18px; color: var(--error); font-weight: bold; margin-bottom: 15px;">MISS: 0</div>
             <div class="modal-btns">
                 <button class="btn-action" style="background:#1d9bf0; color:white;" onclick="shareResult()">結果をXでシェア</button>
-                <button class="btn-action btn-retry" onclick="startCountdown()">もう一度挑戦</button>
-                <button class="btn-action btn-menu" onclick="backToModeSelect()">難易度選択に戻る</button>
+                <button class="btn-action btn-retry" onclick="handleRetryAction()">もう一度挑戦</button>
+                <button class="btn-action btn-menu" onclick="handleMenuAction()">難易度選択に戻る</button>
             </div>
         </div>
+    </div>
+
+    <div class="ad-space bottom-ad">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2656558994804135" data-ad-slot="0000000005" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 </div>
 
@@ -132,6 +179,38 @@
     const liveMiss = document.getElementById('live-miss');
     const pauseBtn = document.getElementById('pause-btn');
 
+    // --- 広告カウント管理 ---
+    let retryCount = parseInt(localStorage.getItem('nt_retry_count') || "0");
+    let menuCount = parseInt(localStorage.getItem('nt_menu_count') || "0");
+    let pendingAction = null;
+
+    function showFullAd(callback) {
+        pendingAction = callback;
+        document.getElementById('interstitial-ad').style.display = 'flex';
+    }
+
+    function closeFullAd() {
+        document.getElementById('interstitial-ad').style.display = 'none';
+        if (pendingAction) { pendingAction(); pendingAction = null; }
+    }
+
+    function handleRetryAction() {
+        retryCount++;
+        localStorage.setItem('nt_retry_count', retryCount);
+        // リスタートは2の倍数
+        if (retryCount % 2 === 0) { showFullAd(() => startCountdown()); } 
+        else { startCountdown(); }
+    }
+
+    function handleMenuAction() {
+        menuCount++;
+        localStorage.setItem('nt_menu_count', menuCount);
+        // メニュー（難易度選択）戻るは3の倍数
+        if (menuCount % 3 === 0) { showFullAd(() => backToModeSelect()); } 
+        else { backToModeSelect(); }
+    }
+
+    // --- ゲーム本体ロジック（改変なし） ---
     function openAbout() { document.getElementById('about-modal').style.display = 'flex'; }
     function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
 
